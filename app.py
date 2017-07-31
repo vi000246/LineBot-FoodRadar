@@ -1,3 +1,5 @@
+#!/usr/bin/python
+#coding:utf-8
 from flask import Flask, request, abort
 import requests
 from linebot import (
@@ -7,8 +9,9 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
+    MessageEvent, TextMessage, TextSendMessage, LocationMessage, LocationSendMessage
 )
+
 
 app = Flask(__name__)
 
@@ -18,7 +21,7 @@ handler = WebhookHandler('8c59beaf31178f4e0a8cafcaf06cc53a')
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    # get X-Line-Signature header value
+    # get X-Line-Signature header value  	X-Line-Signature:ID generated for each request
     signature = request.headers['X-Line-Signature']
 
     # get request body as text
@@ -33,11 +36,30 @@ def callback():
 
     return 'OK'
 
-
+# 傳送文字訊息時會觸發
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    print('hello world')
+    print("event.reply_token:", event.reply_token)
+    print("event.message.type:", event.message.type)
+    content = u'這是文字訊息'
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=content))
+    return 0
 
+# 傳送位置資訊時會觸發
+@handler.add(MessageEvent, message=LocationMessage)
+def handel_location(event):
+    print("event.reply_token:", event.reply_token)
+    print("event.message.type:", event.message.type)
+    line_bot_api.reply_message(
+        event.reply_token,
+        LocationSendMessage(
+            title=event.message.title, address=event.message.address,
+            latitude=event.message.latitude, longitude=event.message.longitude
+        )
+    )
+    return 0
 
 if __name__ == "__main__":
     app.run()
